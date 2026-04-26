@@ -77,7 +77,7 @@ function Sidebar({ issues }: { issues: ValidationIssue[] }) {
           <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white">
             <Maximize2 size={20} />
           </div>
-          ELEVATOR DESIGNER
+          DIDA
         </h1>
       </div>
       
