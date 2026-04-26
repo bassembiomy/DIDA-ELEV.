@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+:root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #f8fafc;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+@layer components {
+  .input-field {
+    @apply w-full p-2 bg-white border border-gray-200 rounded-md text-sm text-gray-700 
+           focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 
+           transition-all shadow-sm;
+  }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
