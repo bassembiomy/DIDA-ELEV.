@@ -1,129 +1,198 @@
 // src/components/ElevatorCab.tsx
+// High-fidelity Elevator Cab with solid geometry and technical details.
+// All geometry uses closed meshes with real-world thicknesses.
+import { useMemo } from 'react';
 import { useElevatorStore } from '../store/elevatorStore';
-import { ProfessionalSheave, RollerGuide } from './MechanicalParts';
+import { 
+  RollerGuide, 
+  SafetyGear, 
+  ProfessionalSheave, 
+  RHSBeam,
+  ToeGuard 
+} from './MechanicalParts';
+import * as THREE from 'three';
+
+// ─── UPN / C-Channel profile for crosshead beam ───────────────────────────────
+function UPNBeam({ length, width = 0.20, height = 0.08, thickness = 0.01 }: { length: number; width?: number; height?: number; thickness?: number }) {
+  const shape = useMemo(() => {
+    const s = new THREE.Shape();
+    const w = width / 2;
+    const h = height / 2;
+    const t = thickness;
+    // Outer
+    s.moveTo(-w, -h);
+    s.lineTo(w, -h);
+    s.lineTo(w, h);
+    s.lineTo(-w, h);
+    s.lineTo(-w, -h);
+    // Inner hole
+    const hole = new THREE.Path();
+    hole.moveTo(-w + t, -h + t);
+    hole.lineTo(w, -h + t);
+    hole.lineTo(w, h - t);
+    hole.lineTo(-w + t, h - t);
+    hole.lineTo(-w + t, -h + t);
+    s.holes.push(hole);
+    return s;
+  }, [width, height, thickness]);
+
+  return (
+    <mesh rotation={[0, Math.PI / 2, 0]} castShadow>
+      <extrudeGeometry args={[shape, { depth: length, bevelEnabled: false }]} />
+      <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.3} />
+    </mesh>
+  );
+}
 
 export function ElevatorCab() {
   const config = useElevatorStore((s) => s.config);
-  const { cab, machine } = config;
-
-  const wallThickness = 0.05;
+  const { cab, hoistway } = config;
+  const cw = cab.width;
+  const cd = cab.depth;
+  const ch = cab.height;
+  const wt = cab.wallThickness;
+  const ft = cab.floorThickness;
 
   return (
     <group>
-      {/* --- CAB SLING (Structural Frame) --- */}
-      <group>
-        {/* Bottom Beam */}
-        <mesh position={[0, -0.05, 0]}>
-          <boxGeometry args={[cab.width + 0.2, 0.1, 0.2]} />
-          <meshStandardMaterial color="#1e293b" metalness={1} />
-        </mesh>
-        {/* Vertical Uprights */}
-        <mesh position={[-cab.width / 2 - 0.1, cab.height / 2, 0]}>
-          <boxGeometry args={[0.08, cab.height + 0.2, 0.1]} />
-          <meshStandardMaterial color="#1e293b" metalness={1} />
-        </mesh>
-        <mesh position={[cab.width / 2 + 0.1, cab.height / 2, 0]}>
-          <boxGeometry args={[0.08, cab.height + 0.2, 0.1]} />
-          <meshStandardMaterial color="#1e293b" metalness={1} />
-        </mesh>
-        {/* Crosshead (Top Beam) */}
-        <mesh position={[0, cab.height + 0.1, 0]}>
-          <boxGeometry args={[cab.width + 0.2, 0.1, 0.2]} />
-          <meshStandardMaterial color="#1e293b" metalness={1} />
-        </mesh>
-
-        {/* Diagonal Bracing (Support Rods) - Professional CAD look */}
-        <mesh position={[-cab.width / 4 - 0.1, cab.height / 2, 0]} rotation={[0, 0, Math.PI / 8]}>
-          <cylinderGeometry args={[0.015, 0.015, cab.height + 0.4, 8]} />
-          <meshStandardMaterial color="#475569" metalness={1} />
-        </mesh>
-        <mesh position={[cab.width / 4 + 0.1, cab.height / 2, 0]} rotation={[0, 0, -Math.PI / 8]}>
-          <cylinderGeometry args={[0.015, 0.015, cab.height + 0.4, 8]} />
-          <meshStandardMaterial color="#475569" metalness={1} />
-        </mesh>
-      </group>
-
-      {/* --- TOE GUARD (Yellow Protection Plate) --- */}
-      <mesh position={[0, -cab.toeGuardHeight / 2 - 0.1, cab.depth / 2 + 0.05]}>
-        <boxGeometry args={[cab.width - 0.1, cab.toeGuardHeight, 0.01]} />
-        <meshStandardMaterial color="#fbbf24" metalness={0.5} roughness={0.5} />
+      {/* ══ FLOOR SLAB ═══════════════════════════════════════════════════════════ */}
+      <mesh position={[0, -ft / 2, 0]} castShadow>
+        <boxGeometry args={[cw, ft, cd]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.8} />
       </mesh>
 
-      {/* --- ROLLER GUIDES --- */}
-      <group position={[-cab.width / 2 - 0.1, cab.height + 0.15, 0]} rotation={[0, -Math.PI / 2, 0]}>
-        <RollerGuide />
+      {/* ══ CAB WALLS (L, R, Back) ══════════════════════════════════════════════ */}
+      {/* Back Wall */}
+      <mesh position={[0, ch / 2, -(cd / 2 - wt / 2)]} castShadow>
+        <boxGeometry args={[cw, ch, wt]} />
+        <meshStandardMaterial color="#94a3b8" metalness={0.5} roughness={0.2} />
+      </mesh>
+      {/* Left Wall */}
+      <mesh position={[-(cw / 2 - wt / 2), ch / 2, 0]} castShadow>
+        <boxGeometry args={[wt, ch, cd]} />
+        <meshStandardMaterial color="#94a3b8" metalness={0.5} roughness={0.2} />
+      </mesh>
+      {/* Right Wall */}
+      <mesh position={[cw / 2 - wt / 2, ch / 2, 0]} castShadow>
+        <boxGeometry args={[wt, ch, cd]} />
+        <meshStandardMaterial color="#94a3b8" metalness={0.5} roughness={0.2} />
+      </mesh>
+
+      {/* ══ CEILING ══════════════════════════════════════════════════════════════ */}
+      <mesh position={[0, ch + wt / 2, 0]} castShadow>
+        <boxGeometry args={[cw, wt, cd]} />
+        <meshStandardMaterial color="#475569" metalness={0.6} />
+      </mesh>
+
+      {/* ══ SLING / CAR FRAME (Structural H-Frame) ═════════════════════════════ */}
+      {/* Bottom Plank (Under floor) */}
+      <group position={[0, -ft - 0.08, 0]}>
+         <RHSBeam length={cw + 0.2} width={0.16} height={0.16} />
       </group>
-      <group position={[cab.width / 2 + 0.1, cab.height + 0.15, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <RollerGuide />
+      {/* Uprights (Stiles) */}
+      <group position={[-(cw / 2 + 0.1), ch / 2, 0]} rotation={[Math.PI / 2, 0, 0]}>
+         <RHSBeam length={ch + ft + 0.4} width={0.12} height={0.08} />
       </group>
-      <group position={[-cab.width / 2 - 0.1, -0.05, 0]} rotation={[0, -Math.PI / 2, 0]}>
-        <RollerGuide />
+      <group position={[cw / 2 + 0.1, ch / 2, 0]} rotation={[Math.PI / 2, 0, 0]}>
+         <RHSBeam length={ch + ft + 0.4} width={0.12} height={0.08} />
       </group>
-      <group position={[cab.width / 2 + 0.1, -0.05, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <RollerGuide />
+      {/* Crosshead (Top beam) */}
+      <group position={[0, ch + 0.25, 0]}>
+         <UPNBeam length={cw + 0.4} width={0.20} height={0.12} />
       </group>
 
-      {/* --- CAB INTERIOR --- */}
-      <group position={[0, cab.height / 2, 0]}>
-        <mesh position={[0, -cab.height / 2 + wallThickness / 2, 0]}>
-          <boxGeometry args={[cab.width, wallThickness, cab.depth]} />
-          <meshStandardMaterial color="#334155" />
-        </mesh>
-        <mesh position={[0, cab.height / 2 - wallThickness / 2, 0]}>
-          <boxGeometry args={[cab.width, wallThickness, cab.depth]} />
-          <meshStandardMaterial color="#94a3b8" />
-        </mesh>
-        <mesh position={[-cab.width / 2 + wallThickness / 2, 0, 0]}>
-          <boxGeometry args={[wallThickness, cab.height, cab.depth]} />
-          <meshStandardMaterial color="#cbd5e1" metalness={0.5} />
-        </mesh>
-        <mesh position={[cab.width / 2 - wallThickness / 2, 0, 0]}>
-          <boxGeometry args={[wallThickness, cab.height, cab.depth]} />
-          <meshStandardMaterial color="#cbd5e1" metalness={0.5} />
-        </mesh>
-        <mesh position={[0, 0, -cab.depth / 2 + wallThickness / 2]}>
-          <boxGeometry args={[cab.width, cab.height, wallThickness]} />
-          <meshStandardMaterial color="#cbd5e1" metalness={0.5} />
-        </mesh>
-
-        {/* COP (Car Operating Panel) */}
-        <mesh position={[cab.width / 2 - wallThickness - 0.01, 0, cab.depth / 4]}>
-          <boxGeometry args={[0.02, 1.2, 0.3]} />
-          <meshStandardMaterial color="#1e293b" metalness={1} />
-          {/* Blue Screen Placeholder */}
-          <mesh position={[0.011, 0.4, 0]}>
-             <planeGeometry args={[0.15, 0.1]} />
-             <meshStandardMaterial color="#3b82f6" emissive="#3b82f6" emissiveIntensity={0.5} />
-          </mesh>
-        </mesh>
+      {/* ══ MECHANICAL ATTACHMENTS ══════════════════════════════════════════════ */}
+      {/* Safety Gear (Under bottom plank) */}
+      <group position={[-(cw / 2 + 0.1), -ft - 0.16, 0]}>
+         <SafetyGear />
+      </group>
+      <group position={[cw / 2 + 0.1, -ft - 0.16, 0]}>
+         <SafetyGear />
       </group>
 
-      {/* --- CAB PULLEYS --- */}
-      {machine.ropingRatio > 1 && (
-        <group position={[0, cab.height + 0.35, 0]}>
-          <ProfessionalSheave diameter={0.4} grooves={machine.ropeCount} />
-        </group>
-      )}
+      {/* Roller Guides (Top and Bottom) */}
+      <group position={[-(cw / 2 + 0.1), ch + 0.35, 0]}>
+         <RollerGuide />
+      </group>
+      <group position={[cw / 2 + 0.1, ch + 0.35, 0]}>
+         <RollerGuide />
+      </group>
+      <group position={[-(cw / 2 + 0.1), -ft - 0.25, 0]}>
+         <RollerGuide />
+      </group>
+      <group position={[cw / 2 + 0.1, -ft - 0.25, 0]}>
+         <RollerGuide />
+      </group>
 
-      {/* --- DOORS --- */}
-      <group position={[0, cab.height / 2, cab.depth / 2]}>
+      {/* Car Pulley (on top of crosshead for 2:1) */}
+      <group position={[0, ch + 0.50, 0]} rotation={[0, 0, Math.PI / 2]}>
+         <ProfessionalSheave diameter={0.4} grooves={6} />
+      </group>
+
+      {/* ══ TOE GUARD ═══════════════════════════════════════════════════════════ */}
+      <group position={[0, -ft, cd / 2 + 0.05]}>
+         <ToeGuard width={cw - 0.1} />
+      </group>
+
+      {/* ══ INTERNAL CAB DETAILS ════════════════════════════════════════════════ */}
+      {/* Car Operating Panel (COP) */}
+      <group position={[cw / 2 - wt - 0.02, ch / 2, cd / 2 - 0.4]}>
+         <mesh castShadow>
+            <boxGeometry args={[0.02, 1.4, 0.25]} />
+            <meshStandardMaterial color="#94a3b8" metalness={0.9} />
+         </mesh>
+         {/* Button grid */}
+         {Array.from({ length: 10 }).map((_, i) => (
+           <mesh key={i} position={[0.012, -0.4 + i * 0.08, 0]} rotation={[0, 0, Math.PI/2]}>
+             <cylinderGeometry args={[0.015, 0.015, 0.01, 16]} />
+             <meshStandardMaterial color="#cbd5e1" emissive="#3b82f6" emissiveIntensity={0.2} />
+           </mesh>
+         ))}
+      </group>
+
+      {/* Internal Lighting (Recessed LED) */}
+      <mesh position={[0, ch - 0.01, 0]}>
+        <boxGeometry args={[cw * 0.7, 0.005, cd * 0.7]} />
+        <meshStandardMaterial color="#f8fafc" emissive="#f8fafc" emissiveIntensity={0.8} />
+      </mesh>
+
+      {/* ══ CAB DOORS & OPERATOR ════════════════════════════════════════════════ */}
+      <group position={[0, ch / 2, cd / 2 + wt / 2 + 0.01]}>
         {cab.doorType === 'center' ? (
           <>
-            <mesh position={[-cab.width / 4, 0, 0.03]}>
-              <boxGeometry args={[cab.width / 2 - 0.05, cab.height - 0.1, 0.04]} />
-              <meshStandardMaterial color="#64748b" metalness={0.8} />
+            <mesh position={[-(cw / 4), 0, 0]} castShadow>
+              <boxGeometry args={[cw / 2 - wt - 0.02, ch - 0.05, 0.040]} />
+              <meshStandardMaterial color="#64748b" metalness={0.85} roughness={0.15} />
             </mesh>
-            <mesh position={[cab.width / 4, 0, 0.03]}>
-              <boxGeometry args={[cab.width / 2 - 0.05, cab.height - 0.1, 0.04]} />
-              <meshStandardMaterial color="#64748b" metalness={0.8} />
+            <mesh position={[(cw / 4), 0, 0]} castShadow>
+              <boxGeometry args={[cw / 2 - wt - 0.02, ch - 0.05, 0.040]} />
+              <meshStandardMaterial color="#64748b" metalness={0.85} roughness={0.15} />
             </mesh>
           </>
         ) : (
-          <mesh position={[cab.width / 4, 0, 0.03]}>
-            <boxGeometry args={[cab.width / 2 - 0.05, cab.height - 0.1, 0.04]} />
-            <meshStandardMaterial color="#64748b" metalness={0.8} />
+          <mesh position={[cw / 4, 0, 0]} castShadow>
+            <boxGeometry args={[cw / 2 + 0.05, ch - 0.05, 0.040]} />
+            <meshStandardMaterial color="#64748b" metalness={0.85} roughness={0.15} />
           </mesh>
         )}
+
+        {/* Door Operator */}
+        <group position={[cw / 2 - 0.40, ch / 2 + 0.12, 0]}>
+           <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
+              <cylinderGeometry args={[0.06, 0.06, 0.15, 16]} />
+              <meshStandardMaterial color="#1e293b" />
+           </mesh>
+           <mesh position={[-cw / 2 + 0.40, 0, 0]} castShadow>
+              <boxGeometry args={[cw, 0.04, 0.03]} />
+              <meshStandardMaterial color="#0f172a" />
+           </mesh>
+        </group>
+
+        {/* Light Curtain */}
+        <mesh position={[cw / 2 - wt - 0.01, 0, 0]} castShadow>
+           <boxGeometry args={[0.010, ch, 0.010]} />
+           <meshStandardMaterial color="#1a1a1a" />
+        </mesh>
       </group>
     </group>
   );

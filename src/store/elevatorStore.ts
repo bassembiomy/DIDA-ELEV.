@@ -5,15 +5,19 @@ import { temporal } from 'zundo';
 
 export type DoorType = 'center' | 'side';
 export type MachineRoomType = 'above' | 'below' | 'none';
+export type WallMaterial = 'concrete' | 'brick' | 'steel';
+export type SlingType = 'standard' | 'underslung';
+export type BrakeType = 'disc' | 'drum';
 
 export interface HoistwayConfig {
   width: number;
   depth: number;
   pitDepth: number;
   overhead: number;
-  wallThickness: number;
-  dbg: number; // Distance Between Guides
-  cwDistance: number; // Distance from Cab center to CW center
+  wallThickness: number;   // m — EN 81-20 min 200mm
+  wallMaterial: WallMaterial;
+  dbg: number;             // Distance Between Guides (m)
+  cwDistance: number;      // CW center offset from cab center (m)
 }
 
 export interface CabConfig {
@@ -22,22 +26,27 @@ export interface CabConfig {
   height: number;
   doorType: DoorType;
   toeGuardHeight: number;
+  wallThickness: number;   // cab interior panel thickness (m), default 0.052
+  floorThickness: number;  // cab floor slab thickness (m), default 0.080
+  slingType: SlingType;
 }
 
 export interface MachineConfig {
   type: 'geared' | 'gearless' | 'hydraulic';
   location: MachineRoomType;
-  sheaveDiameter: number;
-  speed: number; // m/s
+  sheaveDiameter: number;  // mm
+  speed: number;           // m/s
   ropingRatio: 1 | 2 | 4;
   ropeCount: number;
-  ropeDiameter: number; // mm
+  ropeDiameter: number;    // mm
+  motorPower: number;      // kW
+  brakeType: BrakeType;
 }
 
 export interface PerformanceConfig {
-  capacity: number; // kg
+  capacity: number;        // kg
   stops: number;
-  floorHeight: number; // m
+  floorHeight: number;     // m
 }
 
 export interface ElevatorConfig {
@@ -48,18 +57,11 @@ export interface ElevatorConfig {
 }
 
 interface ElevatorStore {
-  // Committed state (what 3D viewport sees)
   config: ElevatorConfig;
-  
-  // Staging state (what inputs edit)
   draftConfig: ElevatorConfig;
-
-  // Actions
   updateDraft: (update: (draft: ElevatorConfig) => void) => void;
   applyDraft: () => void;
   resetDraft: () => void;
-  
-  // Direct updates (for things that should be real-time if any)
   updateConfig: (partial: Partial<ElevatorConfig>) => void;
 }
 
@@ -70,15 +72,19 @@ const initialConfig: ElevatorConfig = {
     pitDepth: 1.5,
     overhead: 3.8,
     wallThickness: 0.2,
+    wallMaterial: 'concrete',
     dbg: 1.8,
-    cwDistance: 1.1
+    cwDistance: 1.1,
   },
   cab: {
     width: 1.6,
     depth: 1.5,
     height: 2.3,
     doorType: 'center',
-    toeGuardHeight: 0.75
+    toeGuardHeight: 0.75,
+    wallThickness: 0.052,
+    floorThickness: 0.080,
+    slingType: 'standard',
   },
   machine: {
     type: 'gearless',
@@ -87,13 +93,15 @@ const initialConfig: ElevatorConfig = {
     speed: 1.0,
     ropingRatio: 2,
     ropeCount: 6,
-    ropeDiameter: 8
+    ropeDiameter: 8,
+    motorPower: 15,
+    brakeType: 'disc',
   },
   performance: {
     capacity: 1000,
     stops: 5,
-    floorHeight: 3.5
-  }
+    floorHeight: 3.5,
+  },
 };
 
 export const useElevatorStore = create<ElevatorStore>()(
@@ -111,20 +119,20 @@ export const useElevatorStore = create<ElevatorStore>()(
           }),
 
           applyDraft: () => set((state) => ({
-            config: JSON.parse(JSON.stringify(state.draftConfig))
+            config: JSON.parse(JSON.stringify(state.draftConfig)),
           })),
 
           resetDraft: () => set((state) => ({
-            draftConfig: JSON.parse(JSON.stringify(state.config))
+            draftConfig: JSON.parse(JSON.stringify(state.config)),
           })),
 
           updateConfig: (partial) => set((state) => ({
-            config: { ...state.config, ...partial }
-          }))
+            config: { ...state.config, ...partial },
+          })),
         }),
         {
-          name: 'elevator-designer-storage',
-          partialize: (state) => ({ config: state.config }), // Only persist committed config
+          name: 'elevator-designer-storage-v2',
+          partialize: (state) => ({ config: state.config }),
         }
       )
     )

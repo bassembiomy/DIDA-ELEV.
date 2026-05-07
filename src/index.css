@@ -21,12 +21,22 @@ body {
   height: 100%;
 }
 
-@layer components {
-  .input-field {
-    @apply w-full p-2 bg-white border border-gray-200 rounded-md text-sm text-gray-700 
-           focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 
-           transition-all shadow-sm;
-  }
+.input-field {
+  width: 100%;
+  padding: 0.5rem;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #334155;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgb(59 130 246 / 0.1);
 }
 
 @keyframes spin-slow {
