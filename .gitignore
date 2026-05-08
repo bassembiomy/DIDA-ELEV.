@@ -17,8 +17,13 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+# C# / .NET
+[Bb]in/
+[Oo]bj/
+*.user
 *.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+*.userosscache
+*.sln.doccache
+*.userprefs
+*.db
+*.opendb
