@@ -46,12 +46,12 @@ function UPNBeam({ length, width = 0.20, height = 0.08, thickness = 0.01 }: { le
 
 export function ElevatorCab() {
   const config = useElevatorStore((s) => s.config);
-  const { cab, hoistway } = config;
+  const { cab } = config;
   const cw = cab.width;
   const cd = cab.depth;
   const ch = cab.height;
-  const wt = cab.wallThickness;
-  const ft = cab.floorThickness;
+  const wt = 0.052; // standard thickness
+  const ft = 0.080; // standard floor
 
   return (
     <group>
@@ -158,7 +158,7 @@ export function ElevatorCab() {
 
       {/* ══ CAB DOORS & OPERATOR ════════════════════════════════════════════════ */}
       <group position={[0, ch / 2, cd / 2 + wt / 2 + 0.01]}>
-        {cab.doorType === 'center' ? (
+        {cab.doorType === 'Center Opening' ? (
           <>
             <mesh position={[-(cw / 4), 0, 0]} castShadow>
               <boxGeometry args={[cw / 2 - wt - 0.02, ch - 0.05, 0.040]} />

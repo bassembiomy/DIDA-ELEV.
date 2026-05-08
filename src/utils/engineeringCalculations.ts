@@ -21,7 +21,7 @@ export function calculateEngineering(config: ElevatorConfig): EngineeringResults
   const { hoistway, performance, machine, cab } = config;
 
   // 1. Total Travel
-  const totalTravel = (performance.stops - 1) * performance.floorHeight;
+  const totalTravel = performance.floorHeightsMm.slice(0, performance.stops - 1).reduce((a, b) => a + b, 0) / 1000;
 
   // 2. Total Shaft Height
   const totalShaftHeight = hoistway.pitDepth + totalTravel + hoistway.overhead;
@@ -29,11 +29,12 @@ export function calculateEngineering(config: ElevatorConfig): EngineeringResults
   // 3. Counterweight Mass — W = G + k·Q
   const G = (cab.width * cab.depth * cab.height) * 200; // ~200 kg/m³ estimate
   const k = 0.45; // balancing factor (EN 81-20 typically 0.40–0.50)
-  const Q = performance.capacity;
+  const Q = cab.ratedLoadKg;
   const counterweightMass = G + k * Q;
 
   // 4. Rope Length (simplified)
-  const ropeLength = machine.ropingRatio * (totalShaftHeight + 10);
+  const ropingRatio = machine.ropingSystem === '1:1 Roping' ? 1 : 2;
+  const ropeLength = ropingRatio * (totalShaftHeight + 10);
 
   // 5. Total Load on Machine
   const ropeLinearMass = 0.4; // kg/m per rope (8mm rope ≈ 0.4 kg/m)

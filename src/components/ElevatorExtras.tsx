@@ -1,5 +1,4 @@
 import { useElevatorStore } from '../store/elevatorStore';
-import { calculateEngineering } from '../utils/engineeringCalculations';
 import { ProfessionalSheave, RollerGuide, SafetyGear, RHSBeam } from './MechanicalParts';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -8,9 +7,9 @@ import { ProfessionalSheave, RollerGuide, SafetyGear, RHSBeam } from './Mechanic
 export function Counterweight() {
   const config = useElevatorStore((s) => s.config);
   const { hoistway, cab, machine } = config;
-  const { counterweightMass, totalTravel } = calculateEngineering(config);
-
-  const cwH     = Math.max(1.0, counterweightMass / 500);  // height from mass
+  
+  const totalTravel = config.performance.floorHeightsMm.reduce((a, b) => a + b, 0) / 1000;
+  const cwH     = 2.0; 
   const cwW     = cab.width * 0.65;
   const cwD     = 0.15;                                      // depth of CW frame
   const frameT  = 0.012;                                     // frame plate thickness
@@ -85,7 +84,7 @@ export function Counterweight() {
       </group>
 
       {/* ── CW pulleys (2:1 or 4:1) ── */}
-      {machine.ropingRatio > 1 && (
+      {machine.ropingSystem !== '1:1 Roping' && (
         <group position={[0, cwH + 0.24, 0]}>
           <ProfessionalSheave diameter={0.30} grooves={machine.ropeCount} />
         </group>
@@ -118,15 +117,13 @@ function RopeSegment({
 // ─────────────────────────────────────────────────────────────────────────────
 export function Machine() {
   const config = useElevatorStore((s) => s.config);
-  const { machine, hoistway } = config;
-  const { totalTravel, counterweightMass, cwHeight: _cwH } = {
-    ...calculateEngineering(config),
-    cwHeight: Math.max(1.0, calculateEngineering(config).counterweightMass / 500),
-  };
+  const { machine, hoistway, cab } = config;
+  const totalTravel = config.performance.floorHeightsMm.reduce((a, b) => a + b, 0) / 1000;
+  const counterweightMass = (cab.width * cab.depth * 200 + 400) + (config.cab.ratedLoadKg * 0.45);
 
-  if (machine.location === 'none') return null;
+  if (hoistway.machineRoomLocation === 'None') return null;
 
-  const machineY    = machine.location === 'above'
+  const machineY = hoistway.machineRoomLocation === 'Top'
     ? totalTravel + hoistway.overhead - 0.6
     : -0.6;
   const cwDepthOff  = -hoistway.cwDistance;
@@ -169,7 +166,7 @@ export function Machine() {
         const cabHitchY  = 0 + 0.080;   // top of cab
         const cwHitchY   = totalTravel + cwH + 0.24;
 
-        if (machine.ropingRatio === 1) {
+        if (machine.ropingSystem === '1:1 Roping') {
           return (
             <group key={i}>
               <RopeSegment x={ropeX} z={0}           y1={cabHitchY} y2={machineY} diameter={machine.ropeDiameter} />

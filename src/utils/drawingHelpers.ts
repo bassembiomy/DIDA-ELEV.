@@ -67,9 +67,6 @@ export function drawDimension(
   layer: string,
   horizontal = true,
 ) {
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-
   if (horizontal) {
     // Extension lines
     dxf.addLine(point3d(x1, y1), point3d(x1, y1 + offset), { layerName: layer });
@@ -158,7 +155,7 @@ export function drawTitleBlock(
   projectInfo: {
     title: string; capacity: number; stops: number;
     speed: number; travel: number; cwMass: number;
-    roping: number; ropeDia: number; ropeCount: number;
+    roping: string; ropeDia: number; ropeCount: number;
   },
   layer: string,
 ) {
@@ -179,7 +176,7 @@ export function drawTitleBlock(
   dxf.addText(point3d(x + 80, y + 300),  60,  `STOPS: ${projectInfo.stops}`, { layerName: layer });
   dxf.addText(point3d(x + 2080, y + 1500), 60, `SPEED: ${projectInfo.speed} m/s`, { layerName: layer });
   dxf.addText(point3d(x + 2080, y + 900),  60, `TRAVEL: ${projectInfo.travel.toFixed(2)} m`, { layerName: layer });
-  dxf.addText(point3d(x + 2080, y + 300),  60, `ROPING: ${projectInfo.roping}:1`, { layerName: layer });
+  dxf.addText(point3d(x + 2080, y + 300),  60, `ROPING: ${projectInfo.roping}`, { layerName: layer });
   dxf.addText(point3d(x + 5080, y + 1500), 60, `CW MASS: ${projectInfo.cwMass.toFixed(0)} kg`, { layerName: layer });
   dxf.addText(point3d(x + 5080, y + 900),  60, `ROPE: Ø${projectInfo.ropeDia}mm × ${projectInfo.ropeCount}`, { layerName: layer });
   dxf.addText(point3d(x + 5080, y + 300),  60, `STD: EN 81-20 / ISO 4190`, { layerName: layer });

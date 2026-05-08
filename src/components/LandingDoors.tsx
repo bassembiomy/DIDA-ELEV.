@@ -47,7 +47,7 @@ function LandingDoorAssembly({ yPos }: LandingDoorProps) {
 
       {/* ── Landing Door Panels ── */}
       <group position={[0, openingH / 2, frameT / 2]}>
-         {cab.doorType === 'center' ? (
+         {cab.doorType === 'Center Opening' ? (
            <>
              <mesh position={[-(openingW / 4 + 0.01), 0, 0]} castShadow>
                <boxGeometry args={[openingW / 2, openingH, doorT]} />
@@ -84,10 +84,14 @@ export function LandingDoorSystem() {
   const { performance } = config;
   
   const floors = useMemo(() => {
-    return Array.from({ length: performance.stops }).map((_, i) => {
-      return i * performance.floorHeight;
-    });
-  }, [performance.stops, performance.floorHeight]);
+    const positions: number[] = [];
+    let currentY = 0;
+    for (let i = 0; i < performance.stops; i++) {
+      positions.push(currentY);
+      currentY += (performance.floorHeightsMm[i] || 3500) / 1000;
+    }
+    return positions;
+  }, [performance.stops, performance.floorHeightsMm]);
 
   return (
     <group>

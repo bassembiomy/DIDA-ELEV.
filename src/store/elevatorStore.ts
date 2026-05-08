@@ -3,21 +3,20 @@ import { create } from 'zustand';
 import { persist, subscribeWithSelector } from 'zustand/middleware';
 import { temporal } from 'zundo';
 
-export type DoorType = 'center' | 'side';
-export type MachineRoomType = 'above' | 'below' | 'none';
-export type WallMaterial = 'concrete' | 'brick' | 'steel';
-export type SlingType = 'standard' | 'underslung';
-export type BrakeType = 'disc' | 'drum';
+export type DoorType = 'Center Opening' | 'Side Opening' | 'Telescopic';
+export type MachineRoomLocation = 'Top' | 'Bottom' | 'Side' | 'None';
+export type ElevatorType = 'Passenger Elevator' | 'Freight Elevator' | 'Hospital Elevator' | 'Panoramic Elevator' | 'Home Elevator';
 
 export interface HoistwayConfig {
   width: number;
   depth: number;
   pitDepth: number;
   overhead: number;
-  wallThickness: number;   // m — EN 81-20 min 200mm
-  wallMaterial: WallMaterial;
-  dbg: number;             // Distance Between Guides (m)
-  cwDistance: number;      // CW center offset from cab center (m)
+  wallThickness: number;
+  wallMaterial: string;
+  dbg: number;
+  cwDistance: number;
+  machineRoomLocation: MachineRoomLocation;
 }
 
 export interface CabConfig {
@@ -26,27 +25,37 @@ export interface CabConfig {
   height: number;
   doorType: DoorType;
   toeGuardHeight: number;
-  wallThickness: number;   // cab interior panel thickness (m), default 0.052
-  floorThickness: number;  // cab floor slab thickness (m), default 0.080
-  slingType: SlingType;
+  cabinMaterial: string;
+  floorMaterial: string;
+  ratedLoadKg: number;
+  passengerCapacity: number;
 }
 
 export interface MachineConfig {
-  type: 'geared' | 'gearless' | 'hydraulic';
-  location: MachineRoomType;
-  sheaveDiameter: number;  // mm
-  speed: number;           // m/s
-  ropingRatio: 1 | 2 | 4;
+  machineType: 'Gearless' | 'Geared' | 'Hydraulic';
+  sheaveDiameter: number;
+  speed: number;
+  ropingSystem: '1:1 Roping' | '2:1 Roping' | '4:1 Roping';
   ropeCount: number;
-  ropeDiameter: number;    // mm
-  motorPower: number;      // kW
-  brakeType: BrakeType;
+  ropeDiameter: number;
+  efficiency: number;
 }
 
 export interface PerformanceConfig {
-  capacity: number;        // kg
+  elevatorType: ElevatorType;
   stops: number;
-  floorHeight: number;     // m
+  floorHeightsMm: number[];
+  nominalSpeed: number;
+  acceleration: number;
+  jerk: number;
+}
+
+export interface SimulationState {
+  currentPosition: number;
+  currentVelocity: number;
+  currentAcceleration: number;
+  doorStatus: string;
+  currentFloor: number;
 }
 
 export interface ElevatorConfig {
@@ -54,6 +63,7 @@ export interface ElevatorConfig {
   cab: CabConfig;
   machine: MachineConfig;
   performance: PerformanceConfig;
+  simulation: SimulationState;
 }
 
 interface ElevatorStore {
@@ -62,7 +72,6 @@ interface ElevatorStore {
   updateDraft: (update: (draft: ElevatorConfig) => void) => void;
   applyDraft: () => void;
   resetDraft: () => void;
-  updateConfig: (partial: Partial<ElevatorConfig>) => void;
 }
 
 const initialConfig: ElevatorConfig = {
@@ -72,35 +81,45 @@ const initialConfig: ElevatorConfig = {
     pitDepth: 1.5,
     overhead: 3.8,
     wallThickness: 0.2,
-    wallMaterial: 'concrete',
+    wallMaterial: 'Concrete',
     dbg: 1.8,
-    cwDistance: 1.1,
+    cwDistance: 0.85,
+    machineRoomLocation: 'Top',
   },
   cab: {
     width: 1.6,
     depth: 1.5,
     height: 2.3,
-    doorType: 'center',
+    doorType: 'Center Opening',
     toeGuardHeight: 0.75,
-    wallThickness: 0.052,
-    floorThickness: 0.080,
-    slingType: 'standard',
+    cabinMaterial: 'Steel',
+    floorMaterial: 'Granite',
+    ratedLoadKg: 1000,
+    passengerCapacity: 13,
   },
   machine: {
-    type: 'gearless',
-    location: 'above',
+    machineType: 'Gearless',
     sheaveDiameter: 400,
     speed: 1.0,
-    ropingRatio: 2,
+    ropingSystem: '2:1 Roping',
     ropeCount: 6,
     ropeDiameter: 8,
-    motorPower: 15,
-    brakeType: 'disc',
+    efficiency: 0.85,
   },
   performance: {
-    capacity: 1000,
+    elevatorType: 'Passenger Elevator',
     stops: 5,
-    floorHeight: 3.5,
+    floorHeightsMm: [3500, 3500, 3500, 3500, 3500],
+    nominalSpeed: 1.0,
+    acceleration: 1.0,
+    jerk: 1.0,
+  },
+  simulation: {
+    currentPosition: 0,
+    currentVelocity: 0,
+    currentAcceleration: 0,
+    doorStatus: 'Closed',
+    currentFloor: 0,
   },
 };
 
@@ -125,13 +144,9 @@ export const useElevatorStore = create<ElevatorStore>()(
           resetDraft: () => set((state) => ({
             draftConfig: JSON.parse(JSON.stringify(state.config)),
           })),
-
-          updateConfig: (partial) => set((state) => ({
-            config: { ...state.config, ...partial },
-          })),
         }),
         {
-          name: 'elevator-designer-storage-v2',
+          name: 'elevator-designer-storage-v3',
           partialize: (state) => ({ config: state.config }),
         }
       )

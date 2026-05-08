@@ -31,7 +31,7 @@ function getMaxCabArea(capacity: number): number {
 
 export function validateElevator(config: ElevatorConfig): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  const { hoistway, cab, machine, performance } = config;
+  const { hoistway, cab, machine } = config;
 
   // 1. Hoistway vs Cab Dimensions (Clearances)
   const lateralClearance = (hoistway.width - cab.width) / 2;
@@ -82,13 +82,13 @@ export function validateElevator(config: ElevatorConfig): ValidationIssue[] {
 
   // 4. Capacity vs Cab Area (Exact EN 81-20 Table 6)
   const cabArea = cab.width * cab.depth;
-  const maxAreaForCapacity = getMaxCabArea(performance.capacity);
-  if (cabArea > maxAreaForCapacity) {
+  const maxAreaForCapacity = getMaxCabArea(cab.ratedLoadKg);
+  if (cabArea > maxAreaForCapacity + 0.001) {
     issues.push({
       id: 'capacity-area',
       category: 'cab',
       severity: 'error',
-      message: `Cab area (${cabArea.toFixed(2)}m²) exceeds maximum allowed (${maxAreaForCapacity.toFixed(2)}m²) for ${performance.capacity}kg capacity.`,
+      message: `Cab area (${cabArea.toFixed(2)}m²) exceeds maximum allowed (${maxAreaForCapacity.toFixed(2)}m²) for ${cab.ratedLoadKg}kg capacity.`,
       code: 'EN 81-20 §5.4.2 Table 6'
     });
   }
